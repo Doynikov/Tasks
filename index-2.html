@@ -11,7 +11,7 @@
 			<task-list :tasks="tasks"></task-list>
 		</div>
 
-		<template id="task-list">
+		<template id="task-list" ref="task-item">
 			<section class="tasks">
 				<h1>
 					Tasks
@@ -83,20 +83,10 @@
 			Vue.component("task-list", {
 				template: "#task-list",
 				props: {
-					//tasks: { default: [] }
+					tasks: { default: [] }
 				},
 				data() {
 					return {
-                        tasks:  [
-					    	{
-						    	title: "Make todo list",
-							    completed: true,
-						    },
-						    {
-							    title: "Go skydiving",
-							    completed: false,
-						    },
-					    ],
 						newTask: "",
                         taskType: 0,
                         categories: [
@@ -136,10 +126,23 @@
 						this.tasks.splice(index, 1);
 					},
 					clearCompleted() {
-						this.tasks = this.tasks.filter(this.inProgress);
+						let b=true
+						while (b) {
+							b=false;
+							for(let i=0; i<this.tasks.length; i++) {
+								if(this.tasks[i].completed) {
+									this.tasks.splice(i, 1);
+									b=true;
+									break;
+								}
+							}
+						}
 					},
 					clearAll() {
-						this.tasks = [];
+						while (this.tasks.length>0) {
+							this.tasks.splice(0, 1);
+						}
+						//this.tasks = [];
 					},
 
 					inProgress(task) {
@@ -173,7 +176,17 @@
 			new Vue({
 				el: "#app",
 				data: {
-					tasks: [],
+					tasks: [
+						{
+							title: "Make todo list",
+							completed: true,
+						},
+						{
+							title: "Go skydiving",
+							completed: false,
+						},
+
+					],
 				},
 			});
 		</script>
