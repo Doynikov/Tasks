@@ -1,262 +1,263 @@
 <html>
-	<head>
-		<meta charset="koi-8" />
-        <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/foundation/6.2.4/foundation.min.css'>
-        <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css'>
-        <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Nunito'>
-		<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-	</head>
-	<body>
-		<div id="app">
-			<task-list :tasks="tasks"></task-list>
-		</div>
 
-		<template id="task-list" ref="task-item">
-			<section class="tasks">
-				<h1>
-					Tasks
-					<transition name="fade">
-						<small v-if="incomplete">({{ incomplete }})</small>
-					</transition>
-				</h1>
-				<div class="tasks__new input-group">
-					<input
-						type="text"
-						class="input-group-field"
-						v-model="newTask"
-						@keyup.enter="addTask"
-						placeholder="New task"
-					/>
-					<span class="input-group-button">
-						<button @click="addTask" class="button">
-							<i class="fa fa-plus"></i> Add
-						</button>
-					</span>
-				</div>
+<head>
+	<meta charset="koi-8" />
+	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/foundation/6.2.4/foundation.min.css'>
+	<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css'>
+	<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Nunito'>
+	<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+</head>
 
-				<div class="tasks__clear button-group pull-right">
-                    <select v-model="selectCategory">
-                        <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.category }}</option>
-                    </select>   
-					<button
-						class="button warning small"
-						@click="clearCompleted"
-					>
-						<i class="fa fa-check"></i> Clear Completed
+<body>
+	<div id="app">
+		<task-list :tasks="tasks"></task-list>
+	</div>
+
+	<template id="task-list" ref="task-item">
+		<section class="tasks">
+			<h1>
+				Tasks
+				<transition name="fade">
+					<small v-if="incomplete">({{ incomplete }})</small>
+				</transition>
+			</h1>
+			<div class="tasks__new input-group">
+				<input type="text" class="input-group-field" v-model="newTask" @keyup.enter="addTask"
+					placeholder="New task" />
+				<span class="input-group-button">
+					<button @click="addTask" class="button">
+						<i class="fa fa-plus"></i> Add
 					</button>
-					<button class="button alert small" @click="clearAll">
-						<i class="fa fa-trash"></i> Clear All
-					</button>
-				</div>
+				</span>
+			</div>
 
-				<transition-group
-					name="fade"
-					tag="ul"
-					class="tasks__list no-bullet"
-				>
-					<task-item
-						v-for="(task, index) in filteredTasks"
-						@remove="removeTask(index)"
-						@complete="completeTask(task)"
-						:task="task"
-						:key="index"
-					></task-item>
-				</transition-group>
-			</section>
-		</template>
-
-		<template id="task-item">
-			<li class="tasks__item">
-				<button :class="className" @click.self="$emit('complete')">
-					{{ task.title }}
+			<div class="tasks__clear button-group pull-right">
+				<select v-model="selectCategory">
+					<option v-for="category in categories" :key="category.id" :value="category.id">{{ category.category
+						}}</option>
+				</select>
+				<button class="button warning small" @click="clearCompleted">
+					<i class="fa fa-check"></i> Clear Completed
 				</button>
-				<button
-					class="tasks__item__remove button alert pull-right"
-					@click="$emit('remove')"
-				>
-					<i class="fa fa-times"></i>
+				<button class="button alert small" @click="clearAll">
+					<i class="fa fa-trash"></i> Clear All
 				</button>
-			</li>
-		</template>
+			</div>
 
-		<script>
-			Vue.component("task-list", {
-				template: "#task-list",
-				props: {
-					tasks: { default: [] }
+			<transition-group name="fade" tag="ul" class="tasks__list no-bullet">
+				<task-item v-for="(task, index) in filteredTasks" @remove="removeTask(index)"
+					@complete="completeTask(task)" :task="task" :key="index"></task-item>
+			</transition-group>
+		</section>
+	</template>
+
+	<template id="task-item">
+		<li class="tasks__item">
+			<button :class="className" @click.self="$emit('complete')">
+				{{ task.title }}
+			</button>
+			<button class="tasks__item__remove button alert pull-right" @click="$emit('remove')">
+				<i class="fa fa-times"></i>
+			</button>
+		</li>
+	</template>
+
+	<script>
+		Vue.component("task-list", {
+			template: "#task-list",
+			props: {
+				tasks: { default: [] }
+			},
+			data() {
+				return {
+					newTask: "",
+					taskType: 0,
+					categories: [
+						{ id: 0, category: 'Все задачи' },
+						{ id: 1, category: 'Показать только открытые задачи' },
+						{ id: 2, category: 'Показать только закрытые задачи' },
+					],
+					selectCategory: 0
+				};
+			},
+			computed: {
+				incomplete() {
+					return this.tasks.filter(this.inProgress).length;
 				},
-				data() {
-					return {
-						newTask: "",
-                        taskType: 0,
-                        categories: [
-                            { id: 0, category: 'Все задачи' },
-                            { id: 1, category: 'Показать только открытые задачи' },
-                            { id: 2, category: 'Показать только закрытые задачи' },
-                        ],
-                        selectCategory: 0
-					};
+				filteredTasks: function () {
+					return this.tasks.filter(task => {
+						return this.selectCategory == 0
+							|| (this.selectCategory == 1 && !this.isCompleted(task))
+							|| (this.selectCategory == 2 && this.isCompleted(task))
+					})
+				}
+			},
+			methods: {
+				addTask() {
+					if (this.newTask) {
+						this.tasks.push({
+							title: this.newTask,
+							completed: false,
+						});
+						this.newTask = "";
+					}
 				},
-				computed: {
-					incomplete() {
-						return this.tasks.filter(this.inProgress).length;
-					},
-                    filteredTasks: function() {
-                        return this.tasks.filter(task => {
-                            return this.selectCategory == 0
-                            || (this.selectCategory == 1 && !this.isCompleted(task))
-                            || (this.selectCategory == 2 && this.isCompleted(task))
-                        }) 
-                    }
+				completeTask(task) {
+					task.completed = !task.completed;
 				},
-				methods: {
-					addTask() {
-						if (this.newTask) {
-							this.tasks.push({
-								title: this.newTask,
-								completed: false,
-							});
-							this.newTask = "";
-						}
-					},
-					completeTask(task) {
-						task.completed = !task.completed;
-					},
-					removeTask(index) {
-						this.tasks.splice(index, 1);
-					},
-					clearCompleted() {
-						let b=true
-						while (b) {
-							b=false;
-							for(let i=0; i<this.tasks.length; i++) {
-								if(this.tasks[i].completed) {
-									this.tasks.splice(i, 1);
-									b=true;
-									break;
-								}
+				removeTask(index) {
+					this.tasks.splice(index, 1);
+				},
+				clearCompleted() {
+					let b = true
+					while (b) {
+						b = false;
+						for (let i = 0; i < this.tasks.length; i++) {
+							if (this.tasks[i].completed) {
+								this.tasks.splice(i, 1);
+								b = true;
+								break;
 							}
 						}
-					},
-					clearAll() {
-						while (this.tasks.length>0) {
-							this.tasks.splice(0, 1);
-						}
-						//this.tasks = [];
-					},
-
-					inProgress(task) {
-						return !this.isCompleted(task);
-					},
-					isCompleted(task) {
-						return task.completed;
-					},
+					}
 				},
-                mounted() {
-		        	this.tasks=this.tasks
-        		}
+				clearAll() {
+					while (this.tasks.length > 0) {
+						this.tasks.splice(0, 1);
+					}
+					//this.tasks = [];
+				},
 
-			});
+				inProgress(task) {
+					return !this.isCompleted(task);
+				},
+				isCompleted(task) {
+					return task.completed;
+				},
+			},
+			mounted() {
+				this.tasks = this.tasks
+			}
 
-			Vue.component("task-item", {
-				template: "#task-item",
-				props: ["task"],
-				computed: {
-					className() {
-						let classes = ["tasks__item__toggle"];
-						if (this.task.completed) {
-							classes.push("tasks__item__toggle--completed");
-						}
-						return classes.join(" ");
+		});
+
+		Vue.component("task-item", {
+			template: "#task-item",
+			props: ["task"],
+			computed: {
+				className() {
+					let classes = ["tasks__item__toggle"];
+					if (this.task.completed) {
+						classes.push("tasks__item__toggle--completed");
+					}
+					return classes.join(" ");
+				},
+			},
+		});
+
+
+		new Vue({
+			el: "#app",
+			data: {
+				tasks: [
+					{
+						title: "Make todo list",
+						completed: true,
 					},
-				},
-			});
+					{
+						title: "Go skydiving",
+						completed: false,
+					},
 
-            
-			new Vue({
-				el: "#app",
-				data: {
-					tasks: [
-						{
-							title: "Make todo list",
-							completed: true,
-						},
-						{
-							title: "Go skydiving",
-							completed: false,
-						},
+				],
+			},
+		});
+	</script>
+	<style>
+		body {
+			background-color: #abc;
+		}
 
-					],
-				},
-			});
-		</script>
-		<style>
-			body {
-			  background-color: #abc; 
-            }
-			*, h1, button {
-			  font-family: 'Nunito', sans-serif;
-            }
-			.fade-enter-active, .fade-leave-active {
-			  transition: opacity .5s;
-            }
-			.fade-enter, .fade-leave-active {
-                opacity: 0
-            }
-            select {
-                width: 320px;
-                display: inline-block;
-                margin: 0px 1px 0px 0px;
-                vertical-align: middle;
-                height: 39px;
-            }
-			.tasks {
-			  width: 100%;
-			  max-width: 45rem;
-			  padding: 1em;
-			  margin: 1em auto;
-			  overflow: auto;
-			  background-color: white;
-			  box-shadow: 0px .25rem 1rem rgba(black, .25);
-            }
-			.tasks__list {
-			  clear: both;
-            }
-			.tasks__item {
-			  margin-bottom: .5em;
-			  position: relative;
-            }
-			.tasks__item__toggle {
-			  cursor: pointer;
-			  width: 100%;
-			  text-align: left;
-			  padding: .85em 2.25em .85em 1em;
-			  background-color: rgba(black, .05);
-			  border: 1px solid rgba(black, .1);
-            }
-			.tasks__item__toggle:hover {
-			  background-color: rgba(black, .1);
-			  border-color: rgba(black, .15);
-            }
-			.tasks__item__toggle--completed {
-			  text-decoration: line-through;
-			  background-color: rgba(green, .15);
-			  border-color: rgba(green, .2);
-            }
-			.tasks__item__toggle--completed:hover {
-			  background-color: rgba(green, .25);
-			  border-color: rgba(green, .3);
-            }
-			.tasks__item__remove {
-			  position: absolute;
-			  height: 100%;
-			  top: 50%;
-			  right: 0;
-			  transform: translateY(-50%);
-            }
-			.tasks__item__remove i {
-			  vertical-align: middle;
-            }
-		</style>
-	</body>
+		*,
+		h1,
+		button {
+			font-family: 'Nunito', sans-serif;
+		}
+
+		.fade-enter-active,
+		.fade-leave-active {
+			transition: opacity .5s;
+		}
+
+		.fade-enter,
+		.fade-leave-active {
+			opacity: 0
+		}
+
+		select {
+			width: 320px;
+			display: inline-block;
+			margin: 0px 1px 0px 0px;
+			vertical-align: middle;
+			height: 39px;
+		}
+
+		.tasks {
+			width: 100%;
+			max-width: 45rem;
+			padding: 1em;
+			margin: 1em auto;
+			overflow: auto;
+			background-color: white;
+			box-shadow: 0px .25rem 1rem rgba(black, .25);
+		}
+
+		.tasks__list {
+			clear: both;
+		}
+
+		.tasks__item {
+			margin-bottom: .5em;
+			position: relative;
+		}
+
+		.tasks__item__toggle {
+			cursor: pointer;
+			width: 100%;
+			text-align: left;
+			padding: .85em 2.25em .85em 1em;
+			background-color: rgba(black, .05);
+			border: 1px solid rgba(black, .1);
+		}
+
+		.tasks__item__toggle:hover {
+			background-color: rgba(black, .1);
+			border-color: rgba(black, .15);
+		}
+
+		.tasks__item__toggle--completed {
+			text-decoration: line-through;
+			background-color: rgba(green, .15);
+			border-color: rgba(green, .2);
+		}
+
+		.tasks__item__toggle--completed:hover {
+			background-color: rgba(green, .25);
+			border-color: rgba(green, .3);
+		}
+
+		.tasks__item__remove {
+			position: absolute;
+			height: 100%;
+			top: 50%;
+			right: 0;
+			transform: translateY(-50%);
+		}
+
+		.tasks__item__remove i {
+			vertical-align: middle;
+		}
+	</style>
+</body>
+
 </html>
